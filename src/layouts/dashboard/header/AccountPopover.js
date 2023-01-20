@@ -1,37 +1,51 @@
-import { useState } from 'react';
+import React, { useState } from 'react';
 // @mui
 import { alpha } from '@mui/material/styles';
 import { Box, Divider, Typography, Stack, MenuItem, Avatar, IconButton, Popover } from '@mui/material';
 // mocks_
 import account from '../../../_mock/account';
-
+import { AppThemeContext } from '../../../hooks/useContext';
+import { logout } from '../../../utils/user.service';
 // ----------------------------------------------------------------------
 
 const MENU_OPTIONS = [
   {
     label: 'Home',
     icon: 'eva:home-fill',
+    flag: 'home'
   },
   {
     label: 'Profile',
     icon: 'eva:person-fill',
+    flag: 'profile'
   },
   {
     label: 'Settings',
     icon: 'eva:settings-2-fill',
+    flag: 'setting'
+  },
+  {
+    label: 'Change Direction',
+    icon: 'eva:settings-2-fill',
+    flag: 'dir'
   },
 ];
 
 // ----------------------------------------------------------------------
 
 export default function AccountPopover() {
+  const context = React.useContext(AppThemeContext);
   const [open, setOpen] = useState(null);
 
   const handleOpen = (event) => {
     setOpen(event.currentTarget);
   };
 
-  const handleClose = () => {
+  const handleClose = (data) => {
+
+    if (data === "dir") {
+      context.setDirection(context.direction === 'rtl' ? 'ltr' : 'rtl');
+    }
     setOpen(null);
   };
 
@@ -89,7 +103,7 @@ export default function AccountPopover() {
 
         <Stack sx={{ p: 1 }}>
           {MENU_OPTIONS.map((option) => (
-            <MenuItem key={option.label} onClick={handleClose}>
+            <MenuItem key={option.label} onClick={() => handleClose(option.flag)}>
               {option.label}
             </MenuItem>
           ))}
@@ -97,7 +111,7 @@ export default function AccountPopover() {
 
         <Divider sx={{ borderStyle: 'dashed' }} />
 
-        <MenuItem onClick={handleClose} sx={{ m: 1 }}>
+        <MenuItem onClick={() => logout()} sx={{ m: 1 }}>
           Logout
         </MenuItem>
       </Popover>

@@ -1,7 +1,8 @@
 import { Helmet } from 'react-helmet-async';
 import { filter } from 'lodash';
 import { sentenceCase } from 'change-case';
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
+import axios from 'axios';
 // @mui
 import {
   Card,
@@ -21,6 +22,12 @@ import {
   IconButton,
   TableContainer,
   TablePagination,
+  Dialog,
+  DialogActions,
+  DialogContent,
+  DialogContentText,
+  DialogTitle,
+  TextField
 } from '@mui/material';
 // components
 import Label from '../components/label';
@@ -28,17 +35,15 @@ import Iconify from '../components/iconify';
 import Scrollbar from '../components/scrollbar';
 // sections
 import { UserListHead, UserListToolbar } from '../sections/@dashboard/user';
+
 // mock
 import USERLIST from '../_mock/user';
 
 // ----------------------------------------------------------------------
 
 const TABLE_HEAD = [
-  { id: 'name', label: 'Name', alignRight: false },
-  { id: 'company', label: 'Company', alignRight: false },
-  { id: 'role', label: 'Role', alignRight: false },
-  { id: 'isVerified', label: 'Verified', alignRight: false },
-  { id: 'status', label: 'Status', alignRight: false },
+  { id: 'title', label: 'Title', alignRight: false },
+  { id: 'body', label: 'Body', alignRight: false },
   { id: '' },
 ];
 
@@ -68,13 +73,16 @@ function applySortFilter(array, comparator, query) {
     return a[1] - b[1];
   });
   if (query) {
-    return filter(array, (_user) => _user.name.toLowerCase().indexOf(query.toLowerCase()) !== -1);
+    return filter(array, (_post) => _post.title.toLowerCase().indexOf(query.toLowerCase()) !== -1);
   }
   return stabilizedThis.map((el) => el[0]);
 }
 
 export default function UserPage() {
+
   const [open, setOpen] = useState(null);
+
+  const [openDialog, setOpenDialog] = useState(false);
 
   const [page, setPage] = useState(0);
 
@@ -82,13 +90,46 @@ export default function UserPage() {
 
   const [selected, setSelected] = useState([]);
 
-  const [orderBy, setOrderBy] = useState('name');
+  const [orderBy, setOrderBy] = useState('title');
 
   const [filterName, setFilterName] = useState('');
 
   const [rowsPerPage, setRowsPerPage] = useState(5);
 
-  const handleOpenMenu = (event) => {
+  const [posts, setPosts] = useState([]);
+
+  const [data, setData] = useState({});
+
+
+
+  useEffect(() => {
+    getPosts();
+  }, []);
+
+  const getPosts = () => {
+    axios.get('https://jsonplaceholder.typicode.com/posts').then(res => {
+      setPosts(res.data.slice(0, 20));
+    });
+  }
+
+  const editPost = (id, data) => {
+    axios.patch(`https://jsonplaceholder.typicode.com/posts/${id}`, data).then(res => {
+      const tempData = posts;
+      tempData[tempData.findIndex(t => t.id === id)].title = res.data.title;
+      tempData[tempData.findIndex(t => t.id === id)].body = res.data.body;
+      setPosts(tempData);
+    });
+  }
+
+  const deletePost = (id) => {
+    axios.delete(`https://jsonplaceholder.typicode.com/posts/${id}`, data).then(() => {
+      const tempData = posts;
+      setPosts(tempData.filter(item => item.id !== id));
+    });
+  }
+
+  const handleOpenMenu = (event, data) => {
+    setData(data);
     setOpen(event.currentTarget);
   };
 
@@ -140,11 +181,27 @@ export default function UserPage() {
     setFilterName(event.target.value);
   };
 
+  const handleEditPost = () => {
+    setOpenDialog(true);
+  }
+
+  const handleDeletePost = () => {
+    deletePost(data.id)
+  }
+
+  const handleCloseDialog = () => {
+    setOpenDialog(false)
+  }
+
+  const handleSavePost = () => {
+    editPost(data.id, data);
+    setOpenDialog(false);
+  }
+
   const emptyRows = page > 0 ? Math.max(0, (1 + page) * rowsPerPage - USERLIST.length) : 0;
 
-  const filteredUsers = applySortFilter(USERLIST, getComparator(order, orderBy), filterName);
-
-  const isNotFound = !filteredUsers.length && !!filterName;
+  const filteredPosts = posts && posts.length !== 0 && applySortFilter(posts, getComparator(order, orderBy), filterName);
+  const isNotFound = !filteredPosts.length && !!filterName;
 
   return (
     <>
@@ -155,10 +212,10 @@ export default function UserPage() {
       <Container>
         <Stack direction="row" alignItems="center" justifyContent="space-between" mb={5}>
           <Typography variant="h4" gutterBottom>
-            User
+            Posts
           </Typography>
           <Button variant="contained" startIcon={<Iconify icon="eva:plus-fill" />}>
-            New User
+            New Post
           </Button>
         </Stack>
 
@@ -178,37 +235,30 @@ export default function UserPage() {
                   onSelectAllClick={handleSelectAllClick}
                 />
                 <TableBody>
-                  {filteredUsers.slice(page * rowsPerPage, page * rowsPerPage + rowsPerPage).map((row) => {
-                    const { id, name, role, status, company, avatarUrl, isVerified } = row;
-                    const selectedUser = selected.indexOf(name) !== -1;
+                  {posts && posts.slice(page * rowsPerPage, page * rowsPerPage + rowsPerPage).map((row) => {
+                    const { id, title, body } = row;
+                    const selectedUser = selected.indexOf(title) !== -1;
 
                     return (
                       <TableRow hover key={id} tabIndex={-1} role="checkbox" selected={selectedUser}>
                         <TableCell padding="checkbox">
-                          <Checkbox checked={selectedUser} onChange={(event) => handleClick(event, name)} />
+                          <Checkbox checked={selectedUser} onChange={(event) => handleClick(event, title)} />
                         </TableCell>
+
+
 
                         <TableCell component="th" scope="row" padding="none">
                           <Stack direction="row" alignItems="center" spacing={2}>
-                            <Avatar alt={name} src={avatarUrl} />
                             <Typography variant="subtitle2" noWrap>
-                              {name}
+                              {title}
                             </Typography>
                           </Stack>
                         </TableCell>
 
-                        <TableCell align="left">{company}</TableCell>
-
-                        <TableCell align="left">{role}</TableCell>
-
-                        <TableCell align="left">{isVerified ? 'Yes' : 'No'}</TableCell>
-
-                        <TableCell align="left">
-                          <Label color={(status === 'banned' && 'error') || 'success'}>{sentenceCase(status)}</Label>
-                        </TableCell>
+                        <TableCell align="left">{body}</TableCell>
 
                         <TableCell align="right">
-                          <IconButton size="large" color="inherit" onClick={handleOpenMenu}>
+                          <IconButton size="large" color="inherit" onClick={(e) => handleOpenMenu(e, row)}>
                             <Iconify icon={'eva:more-vertical-fill'} />
                           </IconButton>
                         </TableCell>
@@ -279,16 +329,61 @@ export default function UserPage() {
           },
         }}
       >
-        <MenuItem>
+        <MenuItem onClick={handleEditPost}>
           <Iconify icon={'eva:edit-fill'} sx={{ mr: 2 }} />
           Edit
         </MenuItem>
 
-        <MenuItem sx={{ color: 'error.main' }}>
+        <MenuItem sx={{ color: 'error.main' }} onClick={handleDeletePost}>
           <Iconify icon={'eva:trash-2-outline'} sx={{ mr: 2 }} />
           Delete
         </MenuItem>
       </Popover>
+
+      <Dialog open={openDialog} onClose={handleCloseDialog}>
+        <DialogTitle>Edit</DialogTitle>
+        <DialogContent>
+          <DialogContentText>
+            Edit Post
+          </DialogContentText>
+          <form>
+            <TextField
+              autoFocus
+              margin="dense"
+              label="Post Title"
+              type="text"
+              fullWidth
+              name="title"
+              value={data && data.length !== 0 && data.title}
+              onChange={(e) => {
+                const { target: { value, name } } = e
+                setData({ ...data, [name]: value })
+              }
+
+              }
+            />
+            <TextField
+              margin="dense"
+              label="Post Body"
+              type="text"
+              fullWidth
+              name="body"
+              value={data && data.length !== 0 && data.body}
+              onChange={e => {
+
+                const { target: { value, name } } = e
+                setData({ ...data, [name]: value })
+
+              }}
+            />
+          </form>
+
+        </DialogContent>
+        <DialogActions>
+          <Button onClick={handleCloseDialog}>Cancel</Button>
+          <Button onClick={handleSavePost}>Save</Button>
+        </DialogActions>
+      </Dialog>
     </>
   );
 }

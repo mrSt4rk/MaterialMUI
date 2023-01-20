@@ -14,7 +14,7 @@ import Scrollbar from '../../../components/scrollbar';
 import NavSection from '../../../components/nav-section';
 //
 import navConfig from './config';
-
+import { AppThemeContext } from '../../../hooks/useContext';
 // ----------------------------------------------------------------------
 
 const NAV_WIDTH = 280;
@@ -37,7 +37,9 @@ Nav.propTypes = {
 export default function Nav({ openNav, onCloseNav }) {
   const { pathname } = useLocation();
 
+
   const isDesktop = useResponsive('up', 'lg');
+
 
   useEffect(() => {
     if (openNav) {
@@ -45,6 +47,9 @@ export default function Nav({ openNav, onCloseNav }) {
     }
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [pathname]);
+
+
+
 
   const renderContent = (
     <Scrollbar
@@ -79,29 +84,7 @@ export default function Nav({ openNav, onCloseNav }) {
 
       <Box sx={{ flexGrow: 1 }} />
 
-      <Box sx={{ px: 2.5, pb: 3, mt: 10 }}>
-        <Stack alignItems="center" spacing={3} sx={{ pt: 5, borderRadius: 2, position: 'relative' }}>
-          <Box
-            component="img"
-            src="/assets/illustrations/illustration_avatar.png"
-            sx={{ width: 100, position: 'absolute', top: -50 }}
-          />
 
-          <Box sx={{ textAlign: 'center' }}>
-            <Typography gutterBottom variant="h6">
-              Get more?
-            </Typography>
-
-            <Typography variant="body2" sx={{ color: 'text.secondary' }}>
-              From only $69
-            </Typography>
-          </Box>
-
-          <Button href="https://material-ui.com/store/items/minimal-dashboard/" target="_blank" variant="contained">
-            Upgrade to Pro
-          </Button>
-        </Stack>
-      </Box>
     </Scrollbar>
   );
 
@@ -109,7 +92,7 @@ export default function Nav({ openNav, onCloseNav }) {
     <Box
       component="nav"
       sx={{
-        flexShrink: { lg: 0 },
+        flexShrink: { lg: 40 },
         width: { lg: NAV_WIDTH },
       }}
     >

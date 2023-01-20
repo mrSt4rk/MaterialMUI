@@ -1,47 +1,27 @@
-import { Navigate, useRoutes } from 'react-router-dom';
+/* eslint-disable react/no-unknown-property */
+import { Route, Routes, Navigate } from 'react-router-dom';
 // layouts
 import DashboardLayout from './layouts/dashboard';
-import SimpleLayout from './layouts/simple';
 //
 import BlogPage from './pages/BlogPage';
 import UserPage from './pages/UserPage';
 import LoginPage from './pages/LoginPage';
-import Page404 from './pages/Page404';
 import ProductsPage from './pages/ProductsPage';
 import DashboardAppPage from './pages/DashboardAppPage';
-
+import { RequireAuth } from './utils/PrivateRoute';
 // ----------------------------------------------------------------------
 
-export default function Router() {
-  const routes = useRoutes([
-    {
-      path: '/dashboard',
-      element: <DashboardLayout />,
-      children: [
-        { element: <Navigate to="/dashboard/app" />, index: true },
-        { path: 'app', element: <DashboardAppPage /> },
-        { path: 'user', element: <UserPage /> },
-        { path: 'products', element: <ProductsPage /> },
-        { path: 'blog', element: <BlogPage /> },
-      ],
-    },
-    {
-      path: 'login',
-      element: <LoginPage />,
-    },
-    {
-      element: <SimpleLayout />,
-      children: [
-        { element: <Navigate to="/dashboard/app" />, index: true },
-        { path: '404', element: <Page404 /> },
-        { path: '*', element: <Navigate to="/404" /> },
-      ],
-    },
-    {
-      path: '*',
-      element: <Navigate to="/404" replace />,
-    },
-  ]);
+const CustomRouter = () => (
+  <Routes>
+    <Route exact path='/dashboard' element={<RequireAuth><DashboardLayout /></RequireAuth>} >
+      <Route exact element={<Navigate to="/dashboard/app" />} index />
+      <Route exact path='app' element={<RequireAuth><DashboardAppPage /></RequireAuth>} />
+      <Route exact path='user' element={<RequireAuth><UserPage /></RequireAuth>} />
+      <Route exact path='products' element={<RequireAuth><ProductsPage /></RequireAuth>} />
+      <Route exact path='blog' element={<RequireAuth><BlogPage /></RequireAuth>} />
+    </Route>
+    <Route exact path='/login' element={<LoginPage />} />
+  </Routes>
+)
 
-  return routes;
-}
+export default CustomRouter;
